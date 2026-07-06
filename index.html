@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Prime Chemicals — Weighbridge</title>
+<script>
+// Direct fetch wrapper — no supabase library needed
+const SURL='https://bsmspbozhchjqpkpftnx.supabase.co';
+const SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzbXNwYm96aGNoanFwa3BmdG54Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyOTA0MzksImV4cCI6MjA5Nzg2NjQzOX0.aT9ftpeVyg5hHUhbvylR8tPbY3eL1-Z_mE90H-lRJsY';
+const H={'apikey':SKEY,'Authorization':'Bearer '+SKEY,'Content-Type':'application/json','Prefer':'return=representation'};
+
+const db={
+  from:(t)=>({
+    select:(cols='*')=>({
+      order:(col,opt={})=>({
+        limit:(n)=>({
+          like:(c,p)=>dbFetch(`${t}?select=${cols}&${c}=like.${encodeURIComponent(p)}&order=${col}.${opt.ascending?'asc':'desc'}&limit=${n}`),
+          then:(r,e)=>dbFetch(`${t}?select=${cols}&order=${col}.${opt.ascending?'asc':'desc'}&limit=${n}`).then(r,e)
+        }),
+        then:(r,e)=>dbFetch(`${t}?select=${cols}&order=${col}.${opt.ascending?'asc':'desc'}`).then(r,e)
+      }),
+      eq:(c,v)=>({
+        eq:(c2,v2)=>({
+          eq:(c3,v3)=>({
+            order:(col,opt={})=>({
+              limit:(n)=>dbFetch(`${t}?select=${cols}&${c}=eq.${v}&${c2}=eq.${encodeURIComponent(v2)}&${c3}=eq.${encodeURIComponent(v3)}&order=${col}.${opt.ascending?'asc':'desc'}&limit=${n}`)
+            })
+          }),
+          order:(col,opt={})=>({
+            limit:(n)=>dbFetch(`${t}?select=${cols}&${c}=eq.${v}&${c2}=eq.${encodeURIComponent(v2)}&order=${col}.${opt.ascending?'asc':'desc'}&limit=${n}`)
+          })
+        }),
+        order:(col,opt={})=>({
+          limit:(n)=>dbFetch(`${t}?select=${cols}&${c}=eq.${v}&order=${col}.${opt.ascending?'asc':'desc'}&limit=${n}`),
+          then:(r,e)=>dbFetch(`${t}?select=${cols}&${c}=eq.${v}&order=${col}.${opt.ascending?'asc':'desc'}`).then(r,e)
+        }),
+        limit:(n)=>dbFetch(`${t}?select=${cols}&${c}=eq.${v}&limit=${n}`),
+        single:()=>dbFetch(`${t}?select=${cols}&${c}=eq.${v}&limit=1`,null,null,true),
+        then:(r,e)=>dbFetch(`${t}?select=${cols}&${c}=eq.${v}`).then(r,e)
+      }),
+      gte:(c,v)=>({lte:(c2,v2)=>({order:(col,opt={})=>dbFetch(`${t}?select=${cols}&${c}=gte.${v}&${c2}=lte.${v2}&order=${col}.${opt.ascending?'asc':'desc'}`)})}),
+      limit:(n)=>dbFetch(`${t}?select=${cols}&limit=${n}`),
+      then:(r,e)=>dbFetch(`${t}?select=${cols}`).then(r,e)
+    }),
+    insert:(row)=>({
+      select:()=>({single:()=>dbMut('POST',t,row,true)})
+    }),
+    update:(row)=>({
+      eq:(c,v)=>({
+        select:()=>({single:()=>dbMut('PATCH',t,row,true,`${c}=eq.${v}`)})
+      })
+    }),
+    delete:()=>({
+      in:(c,vals)=>dbMut('DELETE',t,null,false,`${c}=in.(${vals.join(',')})`)
+    })
+  })
+};
+
+async function dbFetch(path,body,method,single=false){
+  try{
+    const r=await fetch(`${SURL}/rest/v1/${path}`,{headers:H});
+    const data=await r.json();
+    if(!r.ok)return{data:null,error:{message:data.message||'Error'}};
+    return{data:single?(Array.isArray(data)?data[0]:data):data,error:null};
+  }catch(e){return{data:null,error:{message:e.message}};}
+}
+async function dbMut(method,t,body,single,filter=''){
+  try{
+    const url=`${SURL}/rest/v1/${t}${filter?'?'+filter:''}`;
+    const h={...H};
+    if(single)h['Prefer']='return=representation';
+    const r=await fetch(url,{method,headers:h,body:body?JSON.stringify(body):undefined});
+    if(r.status===204)return{data:null,error:null};
+    const data=await r.json();
+    if(!r.ok)return{data:null,error:{message:data.message||'Error '+r.status}};
+    return{data:single?(Array.isArray(data)?data[0]:data):data,error:null};
+  }catch(e){return{data:null,error:{message:e.message}};}
+}
+</script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;color:#111;font-size:15px}
+.hdr{background:#fff;border-bottom:1px solid #e5e7eb;padding:10px 14px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:200;box-shadow:0 1px 3px rgba(0,0,0,.07)}
+.hdr-ico{width:36px;height:36px;background:#1a56db;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;flex-shrink:0}
+.hdr h1{font-size:14px;font-weight:700}
+.hdr p{font-size:11px;color:#6b7280}
+.conn{margin-left:auto;display:flex;align-items:center;gap:5px;font-size:11px;color:#6b7280}
+.dot{width:7px;height:7px;border-radius:50%;background:#d1d5db}
+.dot.on{background:#10b981}
+.tabs{display:flex;background:#fff;border-bottom:1px solid #e5e7eb;overflow-x:auto}
+.tab{padding:11px 15px;font-size:13px;font-weight:500;color:#6b7280;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+.tab.act{color:#1a56db;border-bottom-color:#1a56db}
+.pg{display:none;padding:14px;max-width:680px;margin:0 auto}
+.pg.act{display:block}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:14px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.ct{font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px}
+.rbadge{display:inline-flex;align-items:center;gap:6px;background:#eff6ff;color:#1a56db;border-radius:6px;padding:5px 12px;font-size:14px;font-weight:700;margin-bottom:13px}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.frow.one{grid-template-columns:1fr}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fg label{font-size:11px;font-weight:600;color:#6b7280}
+.fg input{padding:9px 11px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;color:#111;background:#fff;outline:none;transition:border .15s;width:100%}
+.fg input:focus{border-color:#1a56db;box-shadow:0 0 0 3px rgba(26,86,219,.08)}
+.fg input[readonly]{background:#f9fafb;color:#9ca3af}
+.wrow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:8px}
+.wb{background:#f9fafb;border:1.5px solid #e5e7eb;border-radius:10px;padding:10px 12px}
+.wb label{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:3px}
+.wb input{width:100%;border:none;background:transparent;font-size:20px;font-weight:700;color:#111;outline:none}
+.wb.net{background:#eff6ff;border-color:#bfdbfe}
+.wb.net label{color:#1a56db}
+.wb.net input{color:#1a56db}
+.bgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.btn{padding:13px 8px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;line-height:1.3;transition:all .12s;text-align:center}
+.btn sub{font-size:10px;font-weight:500;opacity:.7}
+.btn:active{transform:scale(.96)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.bts{background:#fef9c3;color:#854d0e;border:1.5px solid #fde68a}
+.bgp{background:#1a56db;color:#fff}
+.bgs{background:#eff6ff;color:#1a56db;border:1.5px solid #bfdbfe}
+.btp{background:#f0fdf4;color:#166534;border:1.5px solid #bbf7d0}
+.bclr{background:#fff1f2;color:#be123c;border:1.5px solid #fecdd3;width:100%;padding:11px;margin-top:2px}
+.breprint{background:#f5f3ff;color:#5b21b6;border:1.5px solid #ddd6fe;width:100%;padding:11px;margin-top:6px}
+
+/* PENDING */
+.pc{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:13px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.pc.gm{border-left:3px solid #f59e0b}
+.pc.tm{border-left:3px solid #3b82f6}
+.ptop{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.prno{font-size:13px;font-weight:700;color:#1a56db}
+.pbg{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px}
+.pbg.g{background:#fef9c3;color:#854d0e}
+.pbg.t{background:#eff6ff;color:#1a56db}
+.pi{font-size:13px;font-weight:600;margin-bottom:2px}
+.ps{font-size:12px;color:#6b7280}
+.pw{font-size:12px;color:#6b7280;margin-top:5px}
+.bld{margin-top:10px;padding:7px 13px;background:#eff6ff;color:#1a56db;border:1px solid #bfdbfe;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer}
+.bld:active{transform:scale(.97)}
+.empty{text-align:center;padding:30px;color:#9ca3af}
+
+/* DATABASE */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:12px;min-width:520px}
+th{background:#f9fafb;padding:9px 10px;text-align:left;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;border-bottom:1px solid #e5e7eb;white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid #f3f4f6;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#f9fafb}
+.sc{background:#dcfce7;color:#166534;border-radius:4px;padding:2px 7px;font-size:10px;font-weight:700}
+.sp{background:#fef9c3;color:#854d0e;border-radius:4px;padding:2px 7px;font-size:10px;font-weight:700}
+
+/* DASHBOARD */
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.sb{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.sl{font-size:11px;color:#6b7280;margin-bottom:5px}
+.sv{font-size:22px;font-weight:700}
+.ss{font-size:11px;color:#9ca3af;margin-top:2px}
+
+/* TOAST */
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#1f2937;color:#fff;padding:10px 22px;border-radius:9px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transition:opacity .2s;pointer-events:none;text-align:center;min-width:200px}
+.toast.show{opacity:1}
+
+/* REPRINT MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:14px;padding:22px;width:90%;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,.18)}
+.modal h3{font-size:15px;font-weight:700;margin-bottom:12px}
+.modal input{width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:15px;outline:none;margin-bottom:12px}
+.modal input:focus{border-color:#1a56db}
+.mbtn{padding:10px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;width:100%;margin-bottom:8px;border:none}
+.mbtn.pri{background:#1a56db;color:#fff}
+.mbtn.sec{background:#f3f4f6;color:#374151}
+
+/* PRINT */
+@media print{
+  body>*:not(#parea){display:none!important}
+  #parea{display:block!important}
+  @page{margin:6mm 8mm;size:A4 portrait}
+  .rp{page-break-inside:avoid;height:277mm;display:flex;flex-direction:column;justify-content:space-between}
+  .rblock{flex:1;display:flex;flex-direction:column;justify-content:flex-start}
+}
+#parea{display:none}
+.rp{font-family:'Arial',sans-serif;width:100%;box-sizing:border-box}
+.rblock{width:100%;padding:2mm 0}
+.rco{text-align:center;margin-bottom:2mm;padding-bottom:1mm}
+.rco h2{font-size:13pt;font-weight:900;margin-bottom:0.8mm;letter-spacing:.04em;text-transform:uppercase}
+.rco p{font-size:8.5pt;line-height:1.45;color:#222}
+.rtitle{text-align:center;font-size:10.5pt;font-weight:900;border-top:2px solid #000;border-bottom:2px solid #000;padding:2mm 0;margin:2mm 0;letter-spacing:.1em;background:#f7f7f7}
+.rmeta{display:grid;grid-template-columns:1fr 1fr;gap:1mm 5mm;margin-bottom:2.5mm;font-size:9.5pt;border:1px solid #ccc;padding:2mm 3mm;background:#fafafa}
+.rmeta .lb{color:#444;font-weight:400}
+.rmeta .vl{font-weight:700;color:#000}
+.rtbl{width:100%;border-collapse:collapse;margin-bottom:0}
+.rtbl th{background:#d0d0d0;border:1.5px solid #000;padding:2mm 3mm;font-size:9.5pt;font-weight:900;text-align:left;letter-spacing:.04em;text-transform:uppercase}
+.rtbl td{border:1.5px solid #000;padding:2.2mm 3mm;font-size:10pt}
+.rtbl .net-row td{font-weight:900;font-size:12pt;background:#eeeeee;border-top:2px solid #000}
+.rkgs{font-size:8.5pt;color:#444;text-align:right;margin-top:1mm;font-style:italic}
+.rft{font-size:8pt;color:#444;text-align:center;margin-top:1.5mm;font-style:italic;border-top:1px solid #ccc;padding-top:1.5mm}
+.rsign{text-align:right;font-size:9.5pt;margin-top:4mm;margin-bottom:1mm;color:#000}
+.rsep{border:none;border-top:2.5px dashed #666;margin:3mm 0}
+
+@media(max-width:480px){
+  .frow{grid-template-columns:1fr}
+  .wrow{grid-template-columns:1fr 1fr}
+  .wrow .net{grid-column:span 2}
+  .bgrid{grid-template-columns:1fr 1fr}
+  .sg{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-ico">⚖</div>
+  <div>
+    <h1>Prime Chemicals</h1>
+    <p>Weighbridge · Panoli, Ankleshwar</p>
+  </div>
+  <div class="conn"><div class="dot" id="sdot"></div><span id="stxt">Connecting...</span></div>
+</div>
+
+<div class="tabs">
+  <div class="tab act" onclick="goTab('entry',this)">✏️ Entry</div>
+  <div class="tab" onclick="goTab('pending',this)">🚛 Pending<span id="pcnt"></span></div>
+  <div class="tab" onclick="goTab('db',this)">📋 Records</div>
+  <div class="tab" onclick="goTab('dash',this)">📊 Dashboard</div>
+</div>
+
+<!-- ENTRY -->
+<div id="pg-entry" class="pg act">
+  <div class="card">
+    <div class="rbadge">🧾 <span id="rno-disp">Loading...</span></div>
+    <div class="frow">
+      <div class="fg"><label>Date</label><input type="date" id="f-date"/></div>
+      <div class="fg"><label>Time</label><input type="time" id="f-time"/></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ct">🚛 Truck Details</div>
+    <div class="frow">
+      <div class="fg"><label>Party Name *</label><input type="text" id="f-party" placeholder="M/s. ..."/></div>
+      <div class="fg"><label>Vehicle No *</label><input type="text" id="f-veh" placeholder="GJ19X0000" style="text-transform:uppercase"/></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label>Driver</label><input type="text" id="f-drv" placeholder="Driver name"/></div>
+      <div class="fg"><label>Material</label><input type="text" id="f-mat" placeholder="Material"/></div>
+    </div>
+    <div class="frow one">
+      <div class="fg"><label>Remarks</label><input type="text" id="f-rem" placeholder="Optional..."/></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ct">⚖️ Weight (KG)</div>
+    <div class="wrow">
+      <div class="wb">
+        <label>Gross Wt</label>
+        <input type="number" id="f-gross" placeholder="0" min="0" inputmode="numeric" oninput="calcNet()"/>
+      </div>
+      <div class="wb">
+        <label>Tare Wt</label>
+        <input type="number" id="f-tare" placeholder="0" min="0" inputmode="numeric" oninput="calcNet()"/>
+      </div>
+      <div class="wb net">
+        <label>Net Wt</label>
+        <input type="number" id="f-net" placeholder="—" readonly/>
+      </div>
+    </div>
+    <p style="font-size:11px;color:#9ca3af">Ek j weight bharso chalshe — biju pending ma raheshe</p>
+  </div>
+
+  <div class="card">
+    <div class="ct">🔘 4 Buttons — Exact Excel Jeva</div>
+    <div class="bgrid">
+      <button class="btn bts" onclick="doAction('tare_save')">
+        📥 Tare Entry Save
+        <sub>Tare bharyo · Gross pachhi</sub>
+      </button>
+      <button class="btn bgp" onclick="doAction('gross_print')">
+        🖨️ Gross Entry &amp; Print
+        <sub>Vehicle no thi tare dhundhe · Print</sub>
+      </button>
+      <button class="btn bgs" onclick="doAction('gross_save')">
+        💾 Gross Entry Save
+        <sub>Gross bharyo · Tare pachhi</sub>
+      </button>
+      <button class="btn btp" onclick="doAction('tare_print')">
+        🖨️ Tare Entry &amp; Print
+        <sub>Vehicle no thi gross dhundhe · Print</sub>
+      </button>
+    </div>
+    <button class="btn bclr" onclick="clearForm()">🗑️ Clear — Navi Entry</button>
+    <button class="btn breprint" onclick="openReprint()">🔁 Receipt No thi Duplicate Print</button>
+  </div>
+</div>
+
+<!-- PENDING -->
+<div id="pg-pending" class="pg">
+  <div class="card">
+    <div class="ct">🚛 Pending Trucks — Ek Weight Baaki</div>
+    <div id="plist"><div class="empty"><p>✅ Koi pending truck nathi</p></div></div>
+  </div>
+</div>
+
+<!-- DATABASE -->
+<div id="pg-db" class="pg">
+
+  <!-- BACKUP CARD -->
+  <div class="card" style="border:1.5px solid #fde68a;background:#fffbeb">
+    <div class="ct" style="color:#92400e;margin-bottom:10px">🗂️ Monthly Backup — Export &amp; Delete</div>
+    <div style="font-size:12px;color:#78350f;margin-bottom:12px;line-height:1.6">
+      Month select karo → Export button dabao → Excel file download thashe → pachhi aa month no data database mathi delete thashe.
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <div class="fg" style="flex:1;min-width:140px">
+        <label style="font-size:11px;font-weight:700;color:#92400e">Year</label>
+        <select id="bk-year" style="padding:8px 10px;border:1.5px solid #fcd34d;border-radius:8px;font-size:14px;background:#fff;outline:none"></select>
+      </div>
+      <div class="fg" style="flex:1;min-width:140px">
+        <label style="font-size:11px;font-weight:700;color:#92400e">Month</label>
+        <select id="bk-month" style="padding:8px 10px;border:1.5px solid #fcd34d;border-radius:8px;font-size:14px;background:#fff;outline:none">
+          <option value="01">January</option><option value="02">February</option>
+          <option value="03">March</option><option value="04">April</option>
+          <option value="05">May</option><option value="06">June</option>
+          <option value="07">July</option><option value="08">August</option>
+          <option value="09">September</option><option value="10">October</option>
+          <option value="11">November</option><option value="12">December</option>
+        </select>
+      </div>
+    </div>
+    <button onclick="doBackupAndDelete()" style="margin-top:12px;width:100%;padding:12px;background:#d97706;color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:.02em">
+      📥 Export CSV + Delete — Backup Levo
+    </button>
+    <div id="bk-status" style="margin-top:8px;font-size:12px;color:#92400e;text-align:center"></div>
+  </div>
+
+  <!-- ALL RECORDS CARD -->
+  <div class="card" style="padding:0;overflow:hidden">
+    <div style="padding:12px 14px;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;justify-content:space-between">
+      <div class="ct" style="margin:0">📋 All Records</div>
+      <button onclick="loadDB()" style="font-size:12px;color:#1a56db;background:none;border:none;cursor:pointer;font-weight:700">↻ Refresh</button>
+    </div>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Receipt No</th><th>Date</th><th>Party</th><th>Vehicle</th><th>Gross</th><th>Tare</th><th>Net</th><th>IN/OUT</th><th>Status</th><th>Edit</th></tr></thead>
+        <tbody id="dbtbl"><tr><td colspan="8" style="text-align:center;color:#9ca3af;padding:20px">Loading...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="pg-dash" class="pg">
+  <div class="sg">
+    <div class="sb"><div class="sl">Aaj na Entries</div><div class="sv" id="d-tod">—</div><div class="ss">Today</div></div>
+    <div class="sb"><div class="sl">Total Entries</div><div class="sv" id="d-tot">—</div><div class="ss">All time</div></div>
+    <div class="sb"><div class="sl">Aaj Net Weight</div><div class="sv" id="d-tnet">—</div><div class="ss">KG today</div></div>
+    <div class="sb"><div class="sl">Total Net Weight</div><div class="sv" id="d-anet">—</div><div class="ss">KG all time</div></div>
+  </div>
+  <div class="card">
+    <div class="ct">📅 Chhella 5 Entries</div>
+    <div id="d-rec" style="font-size:13px;color:#9ca3af">Loading...</div>
+  </div>
+</div>
+
+<!-- REPRINT MODAL -->
+<div class="modal-bg" id="reprint-modal">
+  <div class="modal">
+    <h3>🔁 Receipt No thi Duplicate Print</h3>
+    <input type="text" id="reprint-input" placeholder="PC-2026-00001" style="text-transform:uppercase"/>
+    <button class="mbtn pri" onclick="doReprint()">🖨️ Print karo</button>
+    <button class="mbtn sec" onclick="closeReprint()">Cancel</button>
+  </div>
+</div>
+
+<!-- PRINT AREA -->
+<div id="parea">
+  <div class="rp">
+
+    <!-- ═══ ORIGINAL ═══ -->
+    <div class="rblock">
+      <div class="rco">
+        <h2>M/s. PRIME CHEMICALS</h2>
+        <p>Plot No. 3113, GIDC Estate, Panoli - 394 116, Ankleshwar, Dist. Bharuch (Gujarat)<br>
+        Email : primechemicalsguj@yahoo.co.in &nbsp;|&nbsp; M. +91 70969 11992 &nbsp;|&nbsp; +91 98253 47853</p>
+      </div>
+      <div class="rtitle">WEIGHBRIDGE RECEIPT</div>
+      <div class="rmeta">
+        <div><span class="lb">M/s.&nbsp;</span><span class="vl" id="p-party"></span></div>
+        <div><span class="lb">Receipt No.&nbsp;</span><span class="vl" id="p-rno"></span></div>
+        <div><span class="lb">Vehicle No.&nbsp;</span><span class="vl" id="p-veh"></span></div>
+        <div><span class="lb">Date :&nbsp;</span><span class="vl" id="p-date"></span></div>
+        <div><span class="lb">Driver :&nbsp;</span><span class="vl" id="p-drv"></span></div>
+        <div><span class="lb">Time :&nbsp;</span><span class="vl" id="p-time"></span></div>
+      </div>
+      <table class="rtbl">
+        <thead><tr><th style="width:18%">WEIGHT</th><th style="width:22%">KILOGRAMS</th><th style="width:35%">MATERIAL</th><th style="width:25%">REMARKS</th></tr></thead>
+        <tbody>
+          <tr><td><b>GROSS</b></td><td id="p-gross"></td><td id="p-mat"></td><td id="p-rem"></td></tr>
+          <tr><td><b>TARE</b></td><td id="p-tare"></td><td></td><td></td></tr>
+          <tr class="net-row"><td><b>NET</b></td><td id="p-net"></td><td id="p-netcalc" style="color:#1a56db"></td><td></td></tr>
+        </tbody>
+      </table>
+      <div class="rkgs">KGS &nbsp;&nbsp; 60,000</div>
+      <div class="rft">OUR RESPONSIBILITY CEASES ONCE THE CARRIAGE LEAVES THE WEIGH BRIDGE.</div>
+      <div class="rsign">Authorised Signatory ___________________</div>
+    </div>
+
+    <hr class="rsep">
+
+    <!-- ═══ DUPLICATE ═══ -->
+    <div class="rblock">
+      <div class="rco">
+        <h2>M/s. PRIME CHEMICALS</h2>
+        <p>Plot No. 3113, GIDC Estate, Panoli - 394 116, Ankleshwar, Dist. Bharuch (Gujarat)<br>
+        Email : primechemicalsguj@yahoo.co.in &nbsp;|&nbsp; M. +91 70969 11992 &nbsp;|&nbsp; +91 98253 47853</p>
+      </div>
+      <div class="rtitle">WEIGHBRIDGE RECEIPT &mdash; DUPLICATE</div>
+      <div class="rmeta">
+        <div><span class="lb">M/s.&nbsp;</span><span class="vl" id="p2-party"></span></div>
+        <div><span class="lb">Receipt No.&nbsp;</span><span class="vl" id="p2-rno"></span></div>
+        <div><span class="lb">Vehicle No.&nbsp;</span><span class="vl" id="p2-veh"></span></div>
+        <div><span class="lb">Date :&nbsp;</span><span class="vl" id="p2-date"></span></div>
+        <div><span class="lb">Driver :&nbsp;</span><span class="vl" id="p2-drv"></span></div>
+        <div><span class="lb">Time :&nbsp;</span><span class="vl" id="p2-time"></span></div>
+      </div>
+      <table class="rtbl">
+        <thead><tr><th style="width:18%">WEIGHT</th><th style="width:22%">KILOGRAMS</th><th style="width:35%">MATERIAL</th><th style="width:25%">REMARKS</th></tr></thead>
+        <tbody>
+          <tr><td><b>GROSS</b></td><td id="p2-gross"></td><td id="p2-mat"></td><td id="p2-rem"></td></tr>
+          <tr><td><b>TARE</b></td><td id="p2-tare"></td><td></td><td></td></tr>
+          <tr class="net-row"><td><b>NET</b></td><td id="p2-net"></td><td id="p2-netcalc" style="color:#1a56db"></td><td></td></tr>
+        </tbody>
+      </table>
+      <div class="rkgs">KGS &nbsp;&nbsp; 60,000</div>
+      <div class="rft">OUR RESPONSIBILITY CEASES ONCE THE CARRIAGE LEAVES THE WEIGH BRIDGE.</div>
+      <div class="rsign">Authorised Signatory ___________________</div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- PENDING POPUP -->
+<div class="modal-bg" id="pend-modal">
+  <div class="modal" style="max-width:420px;width:95%;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h3 id="pm-title" style="font-size:15px">Weight Entry & Print</h3>
+      <span id="pm-dirbadge" style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px"></span>
+    </div>
+    <div style="background:#f9fafb;border-radius:8px;padding:10px 12px;margin-bottom:12px">
+      <div style="font-size:11px;font-weight:700;color:#6b7280;margin-bottom:8px;text-transform:uppercase">✏️ Edit karva mate — badhu fields badlavi shakay cho</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div class="fg"><label>Party Name</label><input type="text" id="pm-party" placeholder="M/s. ..."/></div>
+        <div class="fg"><label>Vehicle No</label><input type="text" id="pm-veh" placeholder="GJ19X0000" style="text-transform:uppercase"/></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div class="fg"><label>Driver</label><input type="text" id="pm-drv" placeholder="Driver"/></div>
+        <div class="fg"><label>Material</label><input type="text" id="pm-mat" placeholder="Material"/></div>
+      </div>
+      <div class="fg"><label>Remarks</label><input type="text" id="pm-rem" placeholder="Optional..."/></div>
+    </div>
+    <div style="background:#eff6ff;border:2px solid #1a56db;border-radius:8px;padding:10px 12px;margin-bottom:12px">
+      <div style="font-size:11px;font-weight:700;color:#1a56db;margin-bottom:8px;text-transform:uppercase" id="pm-label">⚖️ Baki Weight (KG)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <div class="fg"><label style="font-size:10px;color:#6b7280">GROSS</label><input type="number" id="pm-gross" placeholder="0" inputmode="numeric" oninput="pmCalcNet()"/></div>
+        <div class="fg"><label style="font-size:10px;color:#6b7280">TARE</label><input type="number" id="pm-tare" placeholder="0" inputmode="numeric" oninput="pmCalcNet()"/></div>
+        <div class="fg"><label style="font-size:10px;color:#1a56db;font-weight:700">NET</label><input type="number" id="pm-net" placeholder="—" readonly style="background:#dbeafe;color:#1a56db;font-weight:700;border:none;padding:9px 8px;border-radius:8px"/></div>
+      </div>
+    </div>
+    <button class="mbtn pri" onclick="doPendingPrint()">&#128424; Save & Print karo</button>
+    <button class="mbtn" style="background:#fef9c3;color:#854d0e;border:1px solid #fde68a;margin-bottom:8px;width:100%;padding:10px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer" onclick="doPendingSaveOnly()">💾 Sirf Save karo — Print nahi</button>
+    <button class="mbtn sec" onclick="closePendingPopup()">Cancel</button>
+  </div>
+</div>
+
+<script>
+let curRno='', editId=null;
+
+window.onload=async()=>{setDT();await ping();await nextRno();await loadPending();};
+
+function setDT(){
+  const n=new Date();
+  document.getElementById('f-date').value=n.toISOString().split('T')[0];
+  document.getElementById('f-time').value=n.toTimeString().slice(0,5);
+}
+
+async function ping(){
+  try{
+    const r=await fetch(`${SURL}/rest/v1/weighbridge?select=id&limit=1`,{headers:H});
+    if(r.ok){document.getElementById('sdot').classList.add('on');document.getElementById('stxt').textContent='Connected';}
+    else throw 0;
+  }catch{document.getElementById('stxt').textContent='Offline';}
+}
+
+async function nextRno(){
+  const yr=new Date().getFullYear();
+  // Use gte/lte instead of like for receipt_no
+  const from=`PC-${yr}-00000`;
+  const to=`PC-${yr}-99999`;
+  const r=await fetch(`${SURL}/rest/v1/weighbridge?select=receipt_no&receipt_no=gte.${encodeURIComponent(from)}&receipt_no=lte.${encodeURIComponent(to)}&order=id.desc&limit=1`,{headers:H});
+  const data=await r.json();
+  let n=1;
+  if(data&&data.length){n=(parseInt(data[0].receipt_no.split('-').pop())||0)+1;}
+  curRno=`PC-${yr}-${String(n).padStart(5,'0')}`;
+  document.getElementById('rno-disp').textContent=curRno;
+}
+
+function calcNet(){
+  const g=parseFloat(document.getElementById('f-gross').value)||0;
+  const t=parseFloat(document.getElementById('f-tare').value)||0;
+  document.getElementById('f-net').value=(g>0&&t>0)?g-t:'';
+}
+
+function goTab(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('act'));
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('act'));
+  el.classList.add('act');
+  document.getElementById('pg-'+name).classList.add('act');
+  if(name==='pending')loadPending();
+  if(name==='db'){initBackupSelects();loadDB();}
+  if(name==='dash')loadDash();
+}
+
+// ═══════════════════════════════════════════
+// EXACT VBA LOGIC — 4 BUTTONS
+// ═══════════════════════════════════════════
+async function doAction(type){
+  const party=document.getElementById('f-party').value.trim();
+  const veh=document.getElementById('f-veh').value.trim().toUpperCase();
+  const gross=parseFloat(document.getElementById('f-gross').value)||0;
+  const tare=parseFloat(document.getElementById('f-tare').value)||0;
+  const edate=document.getElementById('f-date').value;
+  const etime=document.getElementById('f-time').value;
+
+  // ── Button 1: TARE ENTRY SAVE ──
+  // VBA: SaveTareEntry — Party+Vehicle+Tare required, save as TARE_DONE
+  if(type==='tare_save'){
+    if(!party){toast('⚠️ Party Name nakho!');return;}
+    if(!veh){toast('⚠️ Vehicle No nakho!');return;}
+    if(!tare){toast('⚠️ Tare Weight nakho!');return;}
+    if(editId){
+      // UPDATE existing entry
+      const ts_u=await fetch(`${SURL}/rest/v1/weighbridge?id=eq.${editId}`,{method:'PATCH',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify({entry_date:edate,entry_time:etime,party_name:party,vehicle_no:veh,driver:document.getElementById('f-drv').value.trim()||null,material:document.getElementById('f-mat').value.trim()||null,remarks:document.getElementById('f-rem').value.trim()||null,tare_weight:tare})});
+      if(!ts_u.ok){const e=await ts_u.json();toast('❌ Error: '+(e.message||ts_u.status));return;}
+      toast('✅ Updated!');editId=null;
+    } else {
+      const ts_r=await fetch(`${SURL}/rest/v1/weighbridge`,{method:'POST',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify({receipt_no:curRno,entry_date:edate,entry_time:etime,party_name:party,vehicle_no:veh,driver:document.getElementById('f-drv').value.trim()||null,material:document.getElementById('f-mat').value.trim()||null,remarks:document.getElementById('f-rem').value.trim()||null,gross_weight:null,tare_weight:tare,net_weight:null,status:'PENDING',pending_type:'TARE_DONE'})});
+      if(!ts_r.ok){const e=await ts_r.json();toast('❌ Error: '+(e.message||ts_r.status));return;}
+      toast('✅ Tare Entry Save Thai! Truck ma Product Bharao. Pachhi Gross Entry & Print dabavo.');
+    }
+    await clearForm();await loadPending();return;
+  }
+
+  // ── Button 2: GROSS ENTRY & PRINT ──
+  // VBA: SaveGrossAndPrint — Vehicle No thi TARE_DONE dhundhe, gross update, print
+  if(type==='gross_print'){
+    if(!veh){toast('⚠️ Vehicle No nakho!');return;}
+    if(!gross){toast('⚠️ Gross Weight nakho!');return;}
+    // TARE_DONE entry dhundho by vehicle no
+    const gpr=await fetch(`${SURL}/rest/v1/weighbridge?select=*&vehicle_no=eq.${encodeURIComponent(veh)}&status=eq.PENDING&pending_type=eq.TARE_DONE&order=id.desc&limit=1`,{headers:H});
+    const rows=gpr.ok?await gpr.json():[];
+    if(!rows||!rows.length){
+      toast('⚠️ Vehicle '+veh+' ni Tare entry mali nahi! Pahela Tare Entry Save dabavo.');return;
+    }
+    const row=rows[0];
+    const tareWt=row.tare_weight;
+    if(gross<=tareWt){toast('⚠️ Gross ('+gross+') Tare ('+tareWt+') karta ochhu che!');return;}
+    const net=gross-tareWt;
+    try{
+      const r=await fetch(`${SURL}/rest/v1/weighbridge?id=eq.${row.id}`,{
+        method:'PATCH',
+        headers:{...H,'Prefer':'return=representation'},
+        body:JSON.stringify({gross_weight:gross,net_weight:net,status:'COMPLETE',pending_type:'COMPLETE'})
+      });
+      if(!r.ok){const d=await r.json();toast('❌ Error: '+(d.message||r.status));return;}
+    }catch(e){toast('❌ Error: '+e.message);return;}
+    toast('✅ Complete! Printing...');
+    fillPrint({...row,gross_weight:gross,tare_weight:tareWt,net_weight:net});
+    setTimeout(()=>window.print(),200);
+    await clearForm();await loadPending();return;
+  }
+
+  // ── Button 3: GROSS ENTRY SAVE ──
+  // VBA: SaveGrossEntry — Party+Vehicle+Gross required, save as GROSS_DONE
+  if(type==='gross_save'){
+    if(!party){toast('⚠️ Party Name nakho!');return;}
+    if(!veh){toast('⚠️ Vehicle No nakho!');return;}
+    if(!gross){toast('⚠️ Gross Weight nakho!');return;}
+    if(editId){
+      const gs_u=await fetch(`${SURL}/rest/v1/weighbridge?id=eq.${editId}`,{method:'PATCH',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify({entry_date:edate,entry_time:etime,party_name:party,vehicle_no:veh,driver:document.getElementById('f-drv').value.trim()||null,material:document.getElementById('f-mat').value.trim()||null,remarks:document.getElementById('f-rem').value.trim()||null,gross_weight:gross})});
+      if(!gs_u.ok){const e=await gs_u.json();toast('❌ Error: '+(e.message||gs_u.status));return;}
+      toast('✅ Updated!');editId=null;
+    } else {
+      const gs_r=await fetch(`${SURL}/rest/v1/weighbridge`,{method:'POST',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify({receipt_no:curRno,entry_date:edate,entry_time:etime,party_name:party,vehicle_no:veh,driver:document.getElementById('f-drv').value.trim()||null,material:document.getElementById('f-mat').value.trim()||null,remarks:document.getElementById('f-rem').value.trim()||null,gross_weight:gross,tare_weight:null,net_weight:null,status:'PENDING',pending_type:'GROSS_DONE'})});
+      if(!gs_r.ok){const e=await gs_r.json();toast('❌ Error: '+(e.message||gs_r.status));return;}
+      toast('✅ Gross Entry Save Thai! Product Khali Karavo. Pachhi Vehicle No + Tare Entry & Print dabavo.');
+    }
+    await clearForm();await loadPending();return;
+  }
+
+  // ── Button 4: TARE ENTRY & PRINT ──
+  // VBA: SaveTareAndPrint — Vehicle No thi GROSS_DONE dhundhe, tare update, print
+  if(type==='tare_print'){
+    if(!veh){toast('⚠️ Vehicle No nakho!');return;}
+    if(!tare){toast('⚠️ Tare Weight nakho!');return;}
+    // GROSS_DONE entry dhundho by vehicle no
+    const tpr=await fetch(`${SURL}/rest/v1/weighbridge?select=*&vehicle_no=eq.${encodeURIComponent(veh)}&status=eq.PENDING&pending_type=eq.GROSS_DONE&order=id.desc&limit=1`,{headers:H});
+    const rows=tpr.ok?await tpr.json():[];
+    if(!rows||!rows.length){
+      toast('⚠️ Vehicle '+veh+' ni Gross entry mali nahi! Pahela Gross Entry Save dabavo.');return;
+    }
+    const row=rows[0];
+    const grossWt=row.gross_weight;
+    if(tare>=grossWt){toast('⚠️ Tare ('+tare+') Gross ('+grossWt+') karta vadhu che!');return;}
+    const net=grossWt-tare;
+    try{
+      const r=await fetch(`${SURL}/rest/v1/weighbridge?id=eq.${row.id}`,{
+        method:'PATCH',
+        headers:{...H,'Prefer':'return=representation'},
+        body:JSON.stringify({tare_weight:tare,net_weight:net,status:'COMPLETE',pending_type:'COMPLETE'})
+      });
+      if(!r.ok){const d=await r.json();toast('❌ Error: '+(d.message||r.status));return;}
+    }catch(e){toast('❌ Error: '+e.message);return;}
+    toast('✅ Complete! Printing...');
+    fillPrint({...row,gross_weight:grossWt,tare_weight:tare,net_weight:net});
+    setTimeout(()=>window.print(),200);
+    await clearForm();await loadPending();return;
+  }
+}
+
+// ═══════════════════════════════════════════
+// REPRINT BY RECEIPT NO — VBA: ReprintByReceiptNo
+// ═══════════════════════════════════════════
+function openReprint(){
+  document.getElementById('reprint-input').value='';
+  document.getElementById('reprint-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('reprint-input').focus(),100);
+}
+function closeReprint(){document.getElementById('reprint-modal').classList.remove('open');}
+
+async function doReprint(){
+  const rno=document.getElementById('reprint-input').value.trim().toUpperCase();
+  if(!rno){toast('⚠️ Receipt No nakho');return;}
+  const rpr=await fetch(`${SURL}/rest/v1/weighbridge?select=*&receipt_no=eq.${encodeURIComponent(rno)}&limit=1`,{headers:H});
+  const data=rpr.ok?await rpr.json():[];
+  if(!data||!data.length){toast('⚠️ Receipt No mali nahi: '+rno);return;}
+  closeReprint();
+  fillPrint(data[0]);
+  setTimeout(()=>window.print(),200);
+}
+
+// ═══════════════════════════════════════════
+// FILL PRINT — Original + Duplicate
+// ═══════════════════════════════════════════
+function fillPrint(r){
+  let d=r.entry_date||'';
+  if(d.includes('-')){const p=d.split('-');d=p[2]+'/'+p[1]+'/'+p[0];}
+
+  // IN/OUT:
+  // GROSS_DONE (gross pehla) → Tare Entry & Print → truck mal lai ne AAVYO = IN
+  // TARE_DONE  (tare pehla)  → Gross Entry & Print → truck mal lai ne GAYO  = OUT
+  const dir=r.pending_type==='GROSS_DONE'?'IN':r.pending_type==='TARE_DONE'?'OUT':'';
+  const rnoWithDir=r.receipt_no+(dir?' — '+dir:'');
+
+  // Net / Remarks = calculated value for NET row Material column
+  let netCalc='';
+  if(r.net_weight!=null && r.remarks && parseFloat(r.remarks)>0){
+    const val=(r.net_weight/parseFloat(r.remarks));
+    netCalc=val%1===0?val.toString():val.toFixed(3).replace(/\.?0+$/,'');
+  }
+
+  const f={
+    party:r.party_name||'',rno:rnoWithDir,veh:r.vehicle_no||'',
+    date:d,drv:r.driver||'',time:r.entry_time||'',
+    gross:r.gross_weight!=null?r.gross_weight+' Kg':'—',
+    tare:r.tare_weight!=null?r.tare_weight+' Kg':'—',
+    net:r.net_weight!=null?r.net_weight+' Kg':'—',
+    mat:r.material||'',rem:r.remarks||'',
+    netcalc:netCalc
+  };
+  ['party','rno','veh','date','drv','time','gross','tare','net','mat','rem','netcalc'].forEach(k=>{
+    const e1=document.getElementById('p-'+k);
+    const e2=document.getElementById('p2-'+k);
+    if(e1)e1.textContent=f[k];
+    if(e2)e2.textContent=f[k];
+  });
+}
+
+// ═══════════════════════════════════════════
+// CLEAR FORM — VBA: ClearForm
+// ═══════════════════════════════════════════
+async function clearForm(){
+  ['f-party','f-veh','f-drv','f-mat','f-rem','f-gross','f-tare','f-net'].forEach(id=>{
+    document.getElementById(id).value='';
+  });
+  editId=null;
+  setDT();await nextRno();
+}
+
+// ═══════════════════════════════════════════
+// PENDING LIST — VBA: ShowPendingTrucks
+// ═══════════════════════════════════════════
+async function loadPending(){
+  const pr=await fetch(`${SURL}/rest/v1/weighbridge?select=*&status=eq.PENDING&order=id.desc`,{headers:H});
+  const data=pr.ok?await pr.json():[];
+  const cnt=document.getElementById('pcnt');
+  const list=document.getElementById('plist');
+  if(!data||!data.length){
+    list.innerHTML='<div class="empty"><p>✅ Koi pending truck nathi — Badha Complete Che!</p></div>';
+    cnt.textContent='';return;
+  }
+  cnt.textContent=` (${data.length})`;
+  list.innerHTML=data.map(r=>{
+    const isTareDone=r.pending_type==='TARE_DONE';
+    const needLabel=isTareDone?'Gross':'Tare';
+    const btnColor=isTareDone?'#1a56db':'#166534';
+    return`<div class="pc ${isTareDone?'gm':'tm'}">
+      <div class="ptop">
+        <span class="prno">${r.receipt_no}</span>
+        <span class="pbg ${isTareDone?'g':'t'}">${isTareDone?'⚡ GROSS BAKI':'⚡ TARE BAKI'}</span>
+      </div>
+      <div class="pi">&#128666; ${r.vehicle_no} — ${r.party_name}</div>
+      <div class="ps">&#128100; ${r.driver||'—'} &nbsp;|&nbsp; &#128230; ${r.material||'—'}</div>
+      <div class="pw">
+        Tare: <strong>${r.tare_weight!=null?r.tare_weight+' Kg':'—'}</strong> &nbsp;|&nbsp;
+        Gross: <strong>${r.gross_weight!=null?r.gross_weight+' Kg':'—'}</strong>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+        <button onclick="openPendingPopup(${r.id})" style="background:${btnColor};color:#fff;border:none;border-radius:8px;padding:10px 6px;font-size:12px;font-weight:700;cursor:pointer">
+          &#128424; ${needLabel} Nakhi Print
+        </button>
+        <button onclick="editPending(${r.id})" style="background:#f3f4f6;color:#374151;border:1.5px solid #d1d5db;border-radius:8px;padding:10px 6px;font-size:12px;font-weight:700;cursor:pointer">
+          &#9999;&#65039; Entry Edit karo
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// DATABASE
+function initBackupSelects(){
+  const yr=document.getElementById('bk-year');
+  if(!yr||yr.options.length>0)return;
+  const cy=new Date().getFullYear();
+  for(let y=cy;y>=cy-3;y--){
+    const o=document.createElement('option');
+    o.value=y;o.textContent=y;yr.appendChild(o);
+  }
+  // Default: current month
+  document.getElementById('bk-month').value=String(new Date().getMonth()+1).padStart(2,'0');
+}
+
+async function doBackupAndDelete(){
+  const yr=document.getElementById('bk-year').value;
+  const mo=document.getElementById('bk-month').value;
+  const monthNames=['','January','February','March','April','May','June','July','August','September','October','November','December'];
+  const monthLabel=monthNames[parseInt(mo)]+' '+yr;
+  const status=document.getElementById('bk-status');
+
+  // Fetch data for selected month
+  const from=`${yr}-${mo}-01`;
+  const toDate=new Date(yr,parseInt(mo),0);
+  const to=`${yr}-${mo}-${String(toDate.getDate()).padStart(2,'0')}`;
+
+  status.textContent='⏳ Data fetch kari rahya che...';
+  const bpr=await fetch(`${SURL}/rest/v1/weighbridge?select=*&entry_date=gte.${from}&entry_date=lte.${to}&order=id.asc`,{headers:H});
+  const data=bpr.ok?await bpr.json():null;
+  if(!bpr.ok){status.textContent='❌ Error: '+bpr.status;return;}
+  if(!data||!data.length){status.textContent='⚠️ '+monthLabel+' ma koi data nathi.';return;}
+
+  // Confirm popup
+  const ok=confirm('📥 BACKUP CONFIRM\n\nMonth: '+monthLabel+'\nRecords: '+data.length+' entries\n\n✅ OK dabaso to:\n1. CSV file download thashe\n2. Aa month no data DELETE thashe\n\n⚠️ Delete pachhi undo nahi thay!\n\nAage vadhvu che?');
+  if(!ok){status.textContent='';return;}
+
+  // Build CSV
+  const headers=['Receipt No','Date','Time','Party Name','Vehicle No','Driver','Material','Remarks','Gross (Kg)','Tare (Kg)','Net (Kg)','Status'];
+  const rows=data.map(r=>[
+    r.receipt_no||'',
+    r.entry_date||'',
+    r.entry_time||'',
+    r.party_name||'',
+    r.vehicle_no||'',
+    r.driver||'',
+    r.material||'',
+    r.remarks||'',
+    r.gross_weight!=null?r.gross_weight:'',
+    r.tare_weight!=null?r.tare_weight:'',
+    r.net_weight!=null?r.net_weight:'',
+    r.status||''
+  ].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(','));
+
+  const csv='\uFEFF'+headers.join(',')+'\n'+rows.join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='PrimeChemicals_Weighbridge_'+yr+'_'+mo+'_'+monthNames[parseInt(mo)]+'.csv';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  status.textContent='⏳ CSV download thai gayu — hav delete kari rahya che...';
+
+  // Delete from DB
+  const ids=data.map(r=>r.id);
+  const dpr=await fetch(`${SURL}/rest/v1/weighbridge?id=in.(${ids.join(',')})`,{method:'DELETE',headers:H});
+  if(!dpr.ok){const de=await dpr.json();status.textContent='⚠️ CSV thayun pan delete failed: '+(de.message||dpr.status);return;}
+
+  status.textContent='✅ '+monthLabel+' — '+data.length+' records export + delete complete!';
+  toast('✅ Backup complete! '+data.length+' records deleted.');
+  await loadDB();
+  await loadPending();
+}
+
+async function loadDB(){
+  const pr=await fetch(`${SURL}/rest/v1/weighbridge?select=*&order=id.desc&limit=200`,{headers:H});
+  const data=pr.ok?await pr.json():[];
+  const tb=document.getElementById('dbtbl');
+  if(!data||!data.length){tb.innerHTML='<tr><td colspan="8" style="text-align:center;color:#9ca3af;padding:20px">Koi data nathi</td></tr>';return;}
+  tb.innerHTML=data.map(r=>{
+    let d=r.entry_date||'—';
+    if(d.includes('-')){const p=d.split('-');d=p[2]+'/'+p[1]+'/'+p[0];}
+    return`<tr>
+      <td><strong>${r.receipt_no}</strong></td><td>${d}</td>
+      <td>${r.party_name}</td><td>${r.vehicle_no}</td>
+      <td>${r.gross_weight!=null?r.gross_weight+' Kg':'—'}</td>
+      <td>${r.tare_weight!=null?r.tare_weight+' Kg':'—'}</td>
+      <td>${r.net_weight!=null?r.net_weight+' Kg':'—'}</td>
+      <td><span style="font-weight:700;color:${r.direction==='OUT'?'#166534':'#1a56db'}">${r.direction||'—'}</span></td>
+      <td><span class="${r.status==='COMPLETE'?'sc':'sp'}">${r.status}</span></td>
+      <td><button onclick="editRecord(${r.id})" style="background:#eff6ff;color:#1a56db;border:1px solid #bfdbfe;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer">✏️ Edit</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// DASHBOARD
+async function loadDash(){
+  const today=new Date().toISOString().split('T')[0];
+  const pr=await fetch(`${SURL}/rest/v1/weighbridge?select=net_weight,entry_date`,{headers:H});
+  const all=pr.ok?await pr.json():[];
+  const tod=(all||[]).filter(r=>r.entry_date===today);
+  document.getElementById('d-tod').textContent=tod.length;
+  document.getElementById('d-tot').textContent=(all||[]).length;
+  document.getElementById('d-tnet').textContent=tod.reduce((s,r)=>s+(r.net_weight||0),0).toLocaleString('en-IN')+' Kg';
+  document.getElementById('d-anet').textContent=(all||[]).reduce((s,r)=>s+(r.net_weight||0),0).toLocaleString('en-IN')+' Kg';
+  const pr2=await fetch(`${SURL}/rest/v1/weighbridge?select=*&order=id.desc&limit=5`,{headers:H});
+  const rec=pr2.ok?await pr2.json():[];
+  const div=document.getElementById('d-rec');
+  if(!rec||!rec.length){div.innerHTML='<p>Koi entry nathi</p>';return;}
+  div.innerHTML=rec.map(r=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f3f4f6">
+      <div><strong style="font-size:13px">${r.receipt_no}</strong>
+        <span style="color:#6b7280;font-size:12px;margin-left:6px">${r.party_name}</span><br>
+        <span style="color:#9ca3af;font-size:11px">🚛 ${r.vehicle_no}</span></div>
+      <div style="text-align:right">
+        <div style="font-size:14px;font-weight:700">${r.net_weight!=null?r.net_weight+' Kg':'—'}</div>
+        <span class="${r.status==='COMPLETE'?'sc':'sp'}">${r.status}</span>
+      </div>
+    </div>`).join('');
+}
+
+// TOAST
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),4000);
+}
+
+// ═══ EDIT ANY RECORD (Records tab) ═══
+async function editRecord(id){
+  const pr=await fetch(`${SURL}/rest/v1/weighbridge?select=*&id=eq.${id}&limit=1`,{headers:H});
+  const arr=pr.ok?await pr.json():[];
+  if(!arr.length){toast('⚠️ Data mali nahi');return;}
+  const r=arr[0];
+  editId=id;
+  curRno=r.receipt_no;
+  document.getElementById('rno-disp').textContent=curRno;
+  document.getElementById('f-date').value=r.entry_date||'';
+  document.getElementById('f-time').value=r.entry_time||'';
+  document.getElementById('f-party').value=r.party_name||'';
+  document.getElementById('f-veh').value=r.vehicle_no||'';
+  document.getElementById('f-drv').value=r.driver||'';
+  document.getElementById('f-mat').value=r.material||'';
+  document.getElementById('f-rem').value=r.remarks||'';
+  document.getElementById('f-gross').value=r.gross_weight||'';
+  document.getElementById('f-tare').value=r.tare_weight||'';
+  calcNet();
+  // Switch to entry tab
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('act'));
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('act'));
+  document.querySelector('.tab').classList.add('act');
+  document.getElementById('pg-entry').classList.add('act');
+  document.getElementById('rno-disp').innerHTML=curRno+' <span style="background:#fef9c3;color:#854d0e;font-size:11px;padding:2px 6px;border-radius:4px;font-weight:700">EDITING</span>';
+  toast('✏️ Record load thai — badlav kari ne Save dabavo');
+}
+
+// ═══ EDIT PENDING ENTRY ═══
+async function editPending(id){
+  const pr=await fetch(`${SURL}/rest/v1/weighbridge?select=*&id=eq.${id}&limit=1`,{headers:H});
+  const arr=pr.ok?await pr.json():[];
+  if(!arr.length){toast('⚠️ Data mali nahi');return;}
+  const r=arr[0];
+
+  // Load all fields into Entry form
+  editId=id;
+  curRno=r.receipt_no;
+  document.getElementById('rno-disp').textContent=curRno;
+  document.getElementById('f-date').value=r.entry_date||'';
+  document.getElementById('f-time').value=r.entry_time||'';
+  document.getElementById('f-party').value=r.party_name||'';
+  document.getElementById('f-veh').value=r.vehicle_no||'';
+  document.getElementById('f-drv').value=r.driver||'';
+  document.getElementById('f-mat').value=r.material||'';
+  document.getElementById('f-rem').value=r.remarks||'';
+  document.getElementById('f-gross').value=r.gross_weight||'';
+  document.getElementById('f-tare').value=r.tare_weight||'';
+  calcNet();
+
+  // Switch to entry tab
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('act'));
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('act'));
+  document.querySelector('.tab').classList.add('act');
+  document.getElementById('pg-entry').classList.add('act');
+
+  // Show edit indicator
+  document.getElementById('rno-disp').innerHTML=curRno+' <span style="background:#fef9c3;color:#854d0e;font-size:11px;padding:2px 6px;border-radius:4px;font-weight:700">EDITING</span>';
+  toast('✏️ Entry load thai — badlav kari ne Save ya Print dabavo');
+}
+
+// Close modal on bg click
+document.getElementById('reprint-modal').addEventListener('click',function(e){
+  if(e.target===this)closeReprint();
+});
+document.getElementById('pend-modal').addEventListener('click',function(e){
+  if(e.target===this)closePendingPopup();
+});
+
+// ═══ PENDING POPUP ═══
+let pendingRowData = null;
+
+async function openPendingPopup(id){
+  const pr=await fetch(`${SURL}/rest/v1/weighbridge?select=*&id=eq.${id}&limit=1`,{headers:H});
+  const arr=pr.ok?await pr.json():[];
+  if(!arr.length){toast('⚠️ Data mali nahi');return;}
+  pendingRowData=arr[0];
+  const isTareDone=pendingRowData.pending_type==='TARE_DONE';
+  document.getElementById('pm-title').textContent=isTareDone?'Gross Weight Nakho & Print':'Tare Weight Nakho & Print';
+  document.getElementById('pm-label').textContent=isTareDone?'Gross Weight (KG)':'Tare Weight (KG)';
+  document.getElementById('pm-info').innerHTML=
+    '<strong>'+pendingRowData.receipt_no+'</strong> &nbsp;|&nbsp; '+pendingRowData.vehicle_no+'<br>'+
+    pendingRowData.party_name+'<br>'+
+    (isTareDone?'Tare: '+pendingRowData.tare_weight+' Kg — Hav Gross nakho':'Gross: '+pendingRowData.gross_weight+' Kg — Hav Tare nakho');
+  document.getElementById('pm-weight').value='';
+  document.getElementById('pend-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('pm-weight').focus(),200);
+}
+
+function closePendingPopup(){
+  document.getElementById('pend-modal').classList.remove('open');
+  pendingRowData=null;
+}
+
+async function doPendingPrint(){
+  if(!pendingRowData){return;}
+  const wt=parseFloat(document.getElementById('pm-weight').value)||0;
+  if(!wt){toast('⚠️ Weight nakho!');return;}
+
+  const isTareDone=pendingRowData.pending_type==='TARE_DONE';
+  let gross,tare,net;
+
+  if(isTareDone){
+    gross=wt; tare=pendingRowData.tare_weight;
+    if(gross<=tare){toast('⚠️ Gross ('+gross+') Tare ('+tare+') karta ochhu che!');return;}
+    net=gross-tare;
+  } else {
+    tare=wt; gross=pendingRowData.gross_weight;
+    if(tare>=gross){toast('⚠️ Tare ('+tare+') Gross ('+gross+') karta vadhu che!');return;}
+    net=gross-tare;
+  }
+
+  // Update DB
+  const r=await fetch(`${SURL}/rest/v1/weighbridge?id=eq.${pendingRowData.id}`,{
+    method:'PATCH',
+    headers:{...H,'Prefer':'return=representation'},
+    body:JSON.stringify(isTareDone
+      ?{gross_weight:gross,net_weight:net,status:'COMPLETE',pending_type:'COMPLETE'}
+      :{tare_weight:tare,net_weight:net,status:'COMPLETE',pending_type:'COMPLETE'})
+  });
+  if(!r.ok){const e=await r.json();toast('❌ Error: '+(e.message||r.status));return;}
+
+  // Print
+  fillPrint({...pendingRowData,gross_weight:gross,tare_weight:tare,net_weight:net});
+  closePendingPopup();
+  toast('✅ Complete! Printing...');
+  setTimeout(()=>window.print(),200);
+  await loadPending();
+}
+</script>
+</body>
+</html>
