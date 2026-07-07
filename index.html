@@ -710,32 +710,30 @@ async function loadPending(){
     list.innerHTML='<div class="empty"><p>✅ Koi pending truck nathi — Badha Complete Che!</p></div>';
     cnt.textContent='';return;
   }
-  cnt.textContent=` (${data.length})`;
-  list.innerHTML=data.map(r=>{
-    const isTareDone=r.pending_type==='TARE_DONE';
-    const needLabel=isTareDone?'Gross':'Tare';
-    const btnColor=isTareDone?'#1a56db':'#166534';
-    return`<div class="pc ${isTareDone?'gm':'tm'}">
-      <div class="ptop">
-        <span class="prno">${r.receipt_no}</span>
-        <span class="pbg ${isTareDone?'g':'t'}">${isTareDone?'⚡ GROSS BAKI':'⚡ TARE BAKI'}</span>
-      </div>
-      <div class="pi">&#128666; ${r.vehicle_no} — ${r.party_name}</div>
-      <div class="ps">&#128100; ${r.driver||'—'} &nbsp;|&nbsp; &#128230; ${r.material||'—'}</div>
-      <div class="pw">
-        Tare: <strong>${r.tare_weight!=null?r.tare_weight+' Kg':'—'}</strong> &nbsp;|&nbsp;
-        Gross: <strong>${r.gross_weight!=null?r.gross_weight+' Kg':'—'}</strong>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
-        <button onclick="openPendingPopup(${r.id})" style="background:${btnColor};color:#fff;border:none;border-radius:8px;padding:10px 6px;font-size:12px;font-weight:700;cursor:pointer">
-          &#128424; ${needLabel} Nakhi Print
-        </button>
-        <button onclick="editPending(${r.id})" style="background:#f3f4f6;color:#374151;border:1.5px solid #d1d5db;border-radius:8px;padding:10px 6px;font-size:12px;font-weight:700;cursor:pointer">
-          &#9999;&#65039; Entry Edit karo
-        </button>
-      </div>
-    </div>`;
-  }).join('');
+  cnt.textContent=' ('+data.length+')';
+  var html='';
+  for(var i=0;i<data.length;i++){
+    var r=data[i];
+    var isTD=r.pending_type==='TARE_DONE';
+    var lbl=isTD?'Gross':'Tare';
+    var bc=isTD?'#1a56db':'#166534';
+    var cls=isTD?'gm':'tm';
+    var pbcls=isTD?'g':'t';
+    var pbtxt=isTD?'&#9889; GROSS BAKI':'&#9889; TARE BAKI';
+    var tw=r.tare_weight!=null?r.tare_weight+' Kg':'&#8212;';
+    var gw=r.gross_weight!=null?r.gross_weight+' Kg':'&#8212;';
+    html+='<div class="pc '+cls+'">';
+    html+='<div class="ptop"><span class="prno">'+r.receipt_no+'</span>';
+    html+='<span class="pbg '+pbcls+'">'+pbtxt+'</span></div>';
+    html+='<div class="pi">&#128666; '+r.vehicle_no+' &#8212; '+r.party_name+'</div>';
+    html+='<div class="ps">&#128100; '+(r.driver||'&#8212;')+' &nbsp;|&nbsp; &#128230; '+(r.material||'&#8212;')+'</div>';
+    html+='<div class="pw">Tare: <strong>'+tw+'</strong> &nbsp;|&nbsp; Gross: <strong>'+gw+'</strong></div>';
+    html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">';
+    html+='<button onclick="openPendingPopup('+r.id+')" style="background:'+bc+';color:#fff;border:none;border-radius:8px;padding:10px 6px;font-size:12px;font-weight:700;cursor:pointer">&#128424; '+lbl+' Nakhi Print</button>';
+    html+='<button onclick="editPending('+r.id+')" style="background:#f3f4f6;color:#374151;border:1.5px solid #d1d5db;border-radius:8px;padding:10px 6px;font-size:12px;font-weight:700;cursor:pointer">&#9999; Edit karo</button>';
+    html+='</div></div>';
+  }
+  list.innerHTML=html;
 }
 
 // DATABASE
@@ -891,6 +889,7 @@ async function editRecord(id){
   document.querySelector('.tab').classList.add('act');
   document.getElementById('pg-entry').classList.add('act');
   document.getElementById('rno-disp').innerHTML=curRno+' <span style="background:#fef9c3;color:#854d0e;font-size:11px;padding:2px 6px;border-radius:4px;font-weight:700">EDITING</span>';
+  window.scrollTo({top:0,behavior:'smooth'});
   toast('✏️ Record load thai — badlav kari ne Save dabavo');
 }
 
@@ -924,6 +923,7 @@ async function editPending(id){
 
   // Show edit indicator
   document.getElementById('rno-disp').innerHTML=curRno+' <span style="background:#fef9c3;color:#854d0e;font-size:11px;padding:2px 6px;border-radius:4px;font-weight:700">EDITING</span>';
+  window.scrollTo({top:0,behavior:'smooth'});
   toast('✏️ Entry load thai — badlav kari ne Save ya Print dabavo');
 }
 
